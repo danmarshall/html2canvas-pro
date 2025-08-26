@@ -80,7 +80,8 @@ const renderElement = async (element: HTMLElement, opts: Partial<Options>): Prom
         onclone: opts.onclone,
         ignoreElements: opts.ignoreElements,
         inlineImages: foreignObjectRendering,
-        copyStyles: foreignObjectRendering
+        copyStyles: foreignObjectRendering,
+        useDirectClone: opts.useDirectClone ?? false
     };
 
     context.logger.debug(
@@ -95,7 +96,15 @@ const renderElement = async (element: HTMLElement, opts: Partial<Options>): Prom
         return Promise.reject(`Unable to find element in cloned iframe`);
     }
 
-    const container = await documentCloner.toIFrame(ownerDocument, windowBounds);
+    let container: HTMLIFrameElement | null = null;
+    
+    if (cloneOptions.useDirectClone) {
+        // Use direct cloning - no iframe container needed
+        await documentCloner.toDirectClone(ownerDocument);
+    } else {
+        // Use traditional iframe-based cloning
+        container = await documentCloner.toIFrame(ownerDocument, windowBounds);
+    }
 
     const { width, height, left, top } =
         isBodyElement(clonedElement) || isHTMLElement(clonedElement)
@@ -141,7 +150,7 @@ const renderElement = async (element: HTMLElement, opts: Partial<Options>): Prom
     }
 
     if (opts.removeContainer ?? true) {
-        if (!DocumentCloner.destroy(container)) {
+        if (container && !DocumentCloner.destroy(container)) {
             context.logger.error(`Cannot detach cloned iframe as it is not in the DOM anymore`);
         }
     }

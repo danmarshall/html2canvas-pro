@@ -16,6 +16,10 @@ export class DocumentCloner {
         return Promise.resolve({} as HTMLIFrameElement);
     }
 
+    toDirectClone(): Promise<HTMLElement> {
+        return Promise.resolve({} as HTMLElement);
+    }
+
     static destroy(): boolean {
         return true;
     }
