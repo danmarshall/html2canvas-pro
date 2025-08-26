@@ -90,4 +90,10 @@ describe('html2canvas', () => {
         );
         expect(DocumentCloner.destroy).not.toBeCalled();
     });
+
+    it('should not call destroy when using direct clone', async () => {
+        DocumentCloner.destroy = jest.fn();
+        await html2canvas(element, { useDirectClone: true });
+        expect(DocumentCloner.destroy).not.toBeCalled();
+    });
 });

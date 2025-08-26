@@ -29,6 +29,7 @@ export interface CloneOptions {
     ignoreElements?: (element: Element) => boolean;
     onclone?: (document: Document, element: HTMLElement) => void;
     allowTaint?: boolean;
+    useDirectClone?: boolean;
 }
 
 export interface WindowOptions {
@@ -153,6 +154,39 @@ export class DocumentCloner {
         documentClone.close();
 
         return iframeLoad;
+    }
+
+    toDirectClone(ownerDocument: Document): Promise<HTMLElement> {
+        return new Promise(async (resolve) => {
+            this.scrolledElements.forEach(restoreNodeScroll);
+
+            const onclone = this.options.onclone;
+            const referenceElement = this.clonedReferenceElement;
+
+            if (typeof referenceElement === 'undefined') {
+                throw new Error(`Error finding the ${this.referenceElement.nodeName} in the cloned document`);
+            }
+
+            if (ownerDocument.fonts && ownerDocument.fonts.ready) {
+                await ownerDocument.fonts.ready;
+            }
+
+            if (/(AppleWebKit)/g.test(navigator.userAgent)) {
+                await imagesReady(ownerDocument);
+            }
+
+            // Replace the original document element with the cloned one
+            const originalDocumentElement = ownerDocument.documentElement;
+            ownerDocument.replaceChild(this.documentElement, originalDocumentElement);
+
+            if (typeof onclone === 'function') {
+                return Promise.resolve()
+                    .then(() => onclone(ownerDocument, referenceElement))
+                    .then(() => resolve(this.documentElement));
+            }
+
+            resolve(this.documentElement);
+        });
     }
 
     createElementClone<T extends HTMLElement | SVGElement>(node: T): HTMLElement | SVGElement {
