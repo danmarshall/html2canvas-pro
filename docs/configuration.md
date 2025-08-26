@@ -35,6 +35,7 @@ Options that control how the content is rendered to the canvas.
 | foreignObjectRendering | `false` | Whether to use ForeignObject rendering if the browser supports it | `true` |
 | ignoreElements | `(element) => false` | Predicate function which removes the matching elements from the render | `(el) => el.classList.contains('no-capture')` |
 | onclone | `null` | Callback function which is called when the Document has been cloned for rendering, can be used to modify the contents that will be rendered without affecting the original source document | `(doc) => doc.querySelector('.date').textContent = new Date().toISOString()` |
+| useDirectClone | `false` | Whether to clone directly into the main document instead of using an iframe. Useful for sandbox environments with null origin where iframe creation fails. **Warning**: This will mutate the original document. | `true` |
 | x | `Element` x-offset | Crop canvas x-coordinate | `10` |
 | y | `Element` y-offset | Crop canvas y-coordinate | `20` |
 | scrollX | `Element` scrollX | The x-scroll position to use when rendering element (for example if the Element uses `position: fixed`) | `0` |
@@ -58,6 +59,26 @@ If you wish to exclude certain `Element`s from getting rendered, you can add a `
 The `customIsSameOrigin` option allows you to override the default same-origin detection logic, which is particularly useful in the following scenarios:
 
 1. **Handling redirects**: When an image URL from your domain redirects to an external domain
+
+## Sandbox Environment Support
+
+If you're working in a sandboxed environment with null origin (such as some iframe contexts), the default iframe-based cloning method may fail. You can use the `useDirectClone` option to work around this limitation:
+
+```typescript
+html2canvas(element, {
+    useDirectClone: true  // Use direct cloning instead of iframe
+}).then(canvas => {
+    // Canvas rendered successfully even in sandbox environment
+    document.body.appendChild(canvas);
+});
+```
+
+**Important Notes:**
+- When `useDirectClone: true` is used, the original document will be temporarily modified during the rendering process
+- This is intended for cases where you don't need to continue using the page after taking the screenshot
+- Use this option only when the standard iframe method fails due to sandbox restrictions
+
+## Custom isSameOrigin Usage
 2. **CDN configurations**: When your content is served from multiple domains or CDNs
 3. **Force CORS mode**: When you want to force all images to use CORS regardless of origin
 
